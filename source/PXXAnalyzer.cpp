@@ -22,51 +22,67 @@ void PXXAnalyzer::SetupResults()
 	mResults->AddChannelBubblesWillAppearOn( mSettings->mInputChannel );
 }
 
+void PXXAnalyzer::newFrame(U64 data, U64 starting_sample) {
+  Frame frame;
+  frame.mData1 = data;
+  frame.mFlags = 0;
+  if (data == 0x7e) {
+    frame.mType = 1;
+    mResults->CommitPacketAndStartNewPacket();
+  }
+  frame.mStartingSampleInclusive = starting_sample;
+  frame.mEndingSampleInclusive = mPXX->GetSampleNumber();
+
+  mResults->AddFrame(frame);
+  mResults->CommitResults();
+  ReportProgress(frame.mEndingSampleInclusive);
+}
+
 void PXXAnalyzer::WorkerThread()
 {
 	mSampleRateHz = GetSampleRate();
+  U32 samples_per_third = mSampleRateHz / 1000000 * 8;
 
-	mSerial = GetAnalyzerChannelData( mSettings->mInputChannel );
+  mPXX = GetAnalyzerChannelData( mSettings->mInputChannel );
 
-	if( mSerial->GetBitState() == BIT_LOW )
-		mSerial->AdvanceToNextEdge();
+	if( mPXX->GetBitState() == BIT_LOW )
+		mPXX->AdvanceToNextEdge();
 
-	
+  U8 data = 0, bit_num = 0;
+  U64 starting_sample = 1;
+  U64 first_edge, second_edge = 0;
 	for( ; ; )
 	{
-		U8 data = 0;
-		U8 mask = 1 << 7;
-		
-		mSerial->AdvanceToNextEdge(); //falling edge -- beginning of the start bit
+    mPXX->AdvanceToNextEdge(); //falling edge -- beginning of a bit
+    first_edge = mPXX->GetSampleNumber();
+    // restart on unexpected timing
+    if (second_edge && ((first_edge - second_edge) > (3 * samples_per_third))) {
+      data = 0;
+      bit_num = 0;
+    }
+    if (bit_num == 0) starting_sample = first_edge;
+    mPXX->AdvanceToNextEdge();
+    second_edge = mPXX->GetSampleNumber();
+    U64 diff_edge = second_edge - first_edge;
 
-		U64 starting_sample = mSerial->GetSampleNumber();
+    // basic glitch detector
+    if ((diff_edge < (samples_per_third / 2)) || (diff_edge > (3 * samples_per_third))) {
+      data = 0;
+      bit_num = 0;
+      continue;
+    }
+    // put a dot where bit sampled
+    mResults->AddMarker(second_edge, AnalyzerResults::Dot, mSettings->mInputChannel);
 
-		mSerial->Advance( samples_to_first_center_of_first_data_bit );
-
-		for( U32 i=0; i<8; i++ )
-		{
-			//let's put a dot exactly where we sample this bit:
-			mResults->AddMarker( mSerial->GetSampleNumber(), AnalyzerResults::Dot, mSettings->mInputChannel );
-
-			if( mSerial->GetBitState() == BIT_HIGH )
-				data |= mask;
-
-			mSerial->Advance( samples_per_bit );
-
-			mask = mask >> 1;
-		}
-
-
-		//we have a byte to save. 
-		Frame frame;
-		frame.mData1 = data;
-		frame.mFlags = 0;
-		frame.mStartingSampleInclusive = starting_sample;
-		frame.mEndingSampleInclusive = mSerial->GetSampleNumber();
-
-		mResults->AddFrame( frame );
-		mResults->CommitResults();
-		ReportProgress( frame.mEndingSampleInclusive );
+    if (diff_edge > samples_per_third) data |= 0x80;
+    bit_num += 1;
+    if (bit_num == 8) {
+      newFrame(data, starting_sample);
+      data = 0;
+      bit_num = 0;
+    } else {
+      data >>= 1;
+    }
 	}
 }
 

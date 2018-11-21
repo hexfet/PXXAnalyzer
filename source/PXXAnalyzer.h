@@ -24,15 +24,18 @@ public:
 protected: //vars
 	std::auto_ptr< PXXAnalyzerSettings > mSettings;
 	std::auto_ptr< PXXAnalyzerResults > mResults;
-	AnalyzerChannelData* mSerial;
+	AnalyzerChannelData* mPXX;
 
 	PXXSimulationDataGenerator mSimulationDataGenerator;
 	bool mSimulationInitilized;
 
-	//Serial analysis vars:
+	//PXX analysis vars:
 	U32 mSampleRateHz;
 	U32 mStartOfStopBitOffset;
 	U32 mEndOfStopBitOffset;
+
+private:
+  void newFrame(U64 data, U64 starting_sample);
 };
 
 extern "C" ANALYZER_EXPORT const char* __cdecl GetAnalyzerName();

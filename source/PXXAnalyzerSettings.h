@@ -15,7 +15,6 @@ public:
 	virtual void LoadSettings( const char* settings );
 	virtual const char* SaveSettings();
 
-	
 	Channel mInputChannel;
 
 protected:

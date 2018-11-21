@@ -19,11 +19,11 @@ protected:
 	U32 mSimulationSampleRateHz;
 
 protected:
-	void CreateSerialByte();
-	std::string mSerialText;
+	void CreatePXXByte();
+	std::string mPXXText;
 	U32 mStringIndex;
 
-	SimulationChannelDescriptor mSerialSimulationData;
+	SimulationChannelDescriptor mPXXSimulationData;
 
 };
 #endif //PXX_SIMULATION_DATA_GENERATOR
