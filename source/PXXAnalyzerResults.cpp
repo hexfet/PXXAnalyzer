@@ -33,7 +33,7 @@ void PXXAnalyzerResults::GenerateExportFile( const char* file, DisplayBase displ
 	U64 trigger_sample = mAnalyzer->GetTriggerSample();
 	U32 sample_rate = mAnalyzer->GetSampleRate();
 
-	file_stream << "Time [s],Value" << std::endl;
+	file_stream << "Time [s],Packet ID,Value" << std::endl;
 
 	U64 num_frames = GetNumFrames();
 	for( U32 i=0; i < num_frames; i++ )
@@ -43,10 +43,16 @@ void PXXAnalyzerResults::GenerateExportFile( const char* file, DisplayBase displ
 		char time_str[128];
 		AnalyzerHelpers::GetTimeString( frame.mStartingSampleInclusive, trigger_sample, sample_rate, time_str, 128 );
 
+    U64 packet_id = GetPacketContainingFrameSequential(i);
+    if (packet_id != INVALID_RESULT_INDEX)
+      file_stream << time_str << "," << packet_id << ",";
+    else
+      file_stream << time_str << ",,";  //it's ok for a frame not to be included in a packet.
+
 		char number_str[128];
 		AnalyzerHelpers::GetNumberString( frame.mData1, display_base, 8, number_str, 128 );
 
-		file_stream << time_str << "," << number_str << std::endl;
+		file_stream << number_str << std::endl;
 
 		if( UpdateExportProgressAndCheckForCancel( i, num_frames ) == true )
 		{
