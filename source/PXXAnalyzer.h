@@ -31,8 +31,6 @@ protected: //vars
 
 	//PXX analysis vars:
 	U32 mSampleRateHz;
-	U32 mStartOfStopBitOffset;
-	U32 mEndOfStopBitOffset;
 
 private:
   void newFrame(U64 data, U64 starting_sample);

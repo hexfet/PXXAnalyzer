@@ -48,7 +48,7 @@ void PXXAnalyzer::WorkerThread()
 	if( mPXX->GetBitState() == BIT_LOW )
 		mPXX->AdvanceToNextEdge();
 
-  U8 data = 0, bit_num = 0;
+  U8 data = 0, bit_num = 0, ones_count = 0;
   U64 starting_sample = 1;
   U64 first_edge, second_edge = 0;
 	for( ; ; )
@@ -56,7 +56,7 @@ void PXXAnalyzer::WorkerThread()
     mPXX->AdvanceToNextEdge(); //falling edge -- beginning of a bit
     first_edge = mPXX->GetSampleNumber();
     // restart on unexpected timing
-    if (second_edge && ((first_edge - second_edge) > (3 * samples_per_third))) {
+    if (second_edge && ((first_edge - second_edge) > (3 * (U64) samples_per_third))) {
       data = 0;
       bit_num = 0;
     }
@@ -66,7 +66,7 @@ void PXXAnalyzer::WorkerThread()
     U64 diff_edge = second_edge - first_edge;
 
     // basic glitch detector
-    if ((diff_edge < (samples_per_third / 2)) || (diff_edge > (3 * samples_per_third))) {
+    if ((diff_edge < ((U64) samples_per_third / 2)) || (diff_edge > (3 * (U64) samples_per_third))) {
       data = 0;
       bit_num = 0;
       continue;
@@ -74,7 +74,19 @@ void PXXAnalyzer::WorkerThread()
     // put a dot where bit sampled
     mResults->AddMarker(second_edge, AnalyzerResults::Dot, mSettings->mInputChannel);
 
-    if (diff_edge > samples_per_third) data |= 0x80;
+    if (diff_edge > samples_per_third) {
+      // received 1
+      data |= 0x80;
+      ones_count += 1;
+      ones_count %= 6;  // ignore 6 one bits - will recognize as 0x7e
+    } else {
+      // received 0
+      if (ones_count == 5) {
+        ones_count = 0;
+        continue;  // ignore stuffed zero
+      }
+      ones_count = 0;
+    }
     bit_num += 1;
     if (bit_num == 8) {
       newFrame(data, starting_sample);
