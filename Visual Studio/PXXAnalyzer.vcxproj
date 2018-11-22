@@ -215,7 +215,7 @@
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
     <PostBuildEvent>
-      <Command>copy "$(TargetPath)" bin\$(AssemblyName)_$(PlatformShortName).dll</Command>
+      <Command>copy "$(TargetPath)" ..\bin\$(AssemblyName)_$(PlatformShortName).dll</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -240,7 +240,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
     </Link>
     <PostBuildEvent>
-      <Command>copy "$(TargetPath)" bin\$(AssemblyName)_$(PlatformShortName).dll</Command>
+      <Command>copy "$(TargetPath)" ..\bin\$(AssemblyName)_$(PlatformShortName).dll</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
