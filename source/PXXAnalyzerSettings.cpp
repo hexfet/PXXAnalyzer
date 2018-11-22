@@ -6,7 +6,7 @@ PXXAnalyzerSettings::PXXAnalyzerSettings()
 :	mInputChannel( UNDEFINED_CHANNEL )
 {
 	mInputChannelInterface.reset( new AnalyzerSettingInterfaceChannel() );
-	mInputChannelInterface->SetTitleAndTooltip( "PWM", "PXX Protocol" );
+	mInputChannelInterface->SetTitleAndTooltip( "PWM", "PXX" );
 	mInputChannelInterface->SetChannel( mInputChannel );
 
 	AddInterface( mInputChannelInterface.get() );
@@ -28,7 +28,7 @@ bool PXXAnalyzerSettings::SetSettingsFromInterfaces()
 	mInputChannel = mInputChannelInterface->GetChannel();
 
 	ClearChannels();
-	AddChannel( mInputChannel, "PXX Protocol", true );
+	AddChannel( mInputChannel, "PXX", true );
 
 	return true;
 }
@@ -46,7 +46,7 @@ void PXXAnalyzerSettings::LoadSettings( const char* settings )
 	text_archive >> mInputChannel;
 
 	ClearChannels();
-	AddChannel( mInputChannel, "PXX Protocol", true );
+	AddChannel( mInputChannel, "PXX", true );
 
 	UpdateInterfacesFromSettings();
 }

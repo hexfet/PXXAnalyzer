@@ -125,12 +125,12 @@ U32 PXXAnalyzer::GetMinimumSampleRateHz()
 
 const char* PXXAnalyzer::GetAnalyzerName() const
 {
-	return "PXX Protocol";
+	return "PXX";
 }
 
 const char* GetAnalyzerName()
 {
-	return "PXX Protocol";
+	return "PXX";
 }
 
 Analyzer* CreateAnalyzer()
