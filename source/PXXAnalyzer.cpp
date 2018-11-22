@@ -43,7 +43,7 @@ void PXXAnalyzer::newFrame(U64 data, U64 starting_sample) {
 void PXXAnalyzer::WorkerThread()
 {
 	mSampleRateHz = GetSampleRate();
-  U32 samples_per_third = mSampleRateHz / 1000000 * 8;
+  U64 samples_per_third = (U64) mSampleRateHz / 1000000 * 8;
 
   mPXX = GetAnalyzerChannelData( mSettings->mInputChannel );
 
