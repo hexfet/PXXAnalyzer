@@ -53,7 +53,7 @@ void PXXAnalyzer::WorkerThread()
   U8 data = 0, bit_num = 7, ones_count = 0;
   U64 starting_sample = 1;
   U64 first_edge, second_edge = 0;
-  U64 bit_count = 0;
+
 	for( ; ; )
 	{
     mPXX->AdvanceToNextEdge(); //falling edge -- beginning of a bit
@@ -75,9 +75,7 @@ void PXXAnalyzer::WorkerThread()
       continue;
     }
 
-    bit_count++;
-
-    if (diff_edge > samples_per_third) {
+    if (diff_edge > (samples_per_third + samples_per_third/2)) {
       // received 1
       data |= (1 << bit_num);
       ones_count += 1;
@@ -96,7 +94,6 @@ void PXXAnalyzer::WorkerThread()
 
     if (bit_num == 0) {
       newFrame(data, starting_sample);
-      //TODO      newFrame(bit_count, starting_sample);
       data = 0;
       bit_num = 7;
     } else {
