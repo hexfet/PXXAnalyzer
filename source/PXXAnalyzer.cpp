@@ -5,7 +5,9 @@
 PXXAnalyzer::PXXAnalyzer()
 :	Analyzer2(),  
 	mSettings( new PXXAnalyzerSettings() ),
-	mSimulationInitilized( false )
+	mSimulationInitilized( false ),
+  mPXX( NULL ),
+  mSampleRateHz( 0 )
 {
 	SetAnalyzerSettings( mSettings.get() );
 }
