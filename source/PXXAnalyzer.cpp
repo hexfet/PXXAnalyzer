@@ -48,9 +48,10 @@ void PXXAnalyzer::WorkerThread()
 	if( mPXX->GetBitState() == BIT_LOW )
 		mPXX->AdvanceToNextEdge();
 
-  U8 data = 0, bit_num = 0, ones_count = 0;
+  U8 data = 0, bit_num = 7, ones_count = 0;
   U64 starting_sample = 1;
   U64 first_edge, second_edge = 0;
+  U64 bit_count = 0;
 	for( ; ; )
 	{
     mPXX->AdvanceToNextEdge(); //falling edge -- beginning of a bit
@@ -58,9 +59,9 @@ void PXXAnalyzer::WorkerThread()
     // restart on unexpected timing
     if (second_edge && ((first_edge - second_edge) > (3 * (U64) samples_per_third))) {
       data = 0;
-      bit_num = 0;
+      bit_num = 7;
     }
-    if (bit_num == 0) starting_sample = first_edge;
+    if (bit_num == 7) starting_sample = first_edge;
     mPXX->AdvanceToNextEdge();
     second_edge = mPXX->GetSampleNumber();
     U64 diff_edge = second_edge - first_edge;
@@ -68,32 +69,36 @@ void PXXAnalyzer::WorkerThread()
     // basic glitch detector
     if ((diff_edge < ((U64) samples_per_third / 2)) || (diff_edge > (3 * (U64) samples_per_third))) {
       data = 0;
-      bit_num = 0;
+      bit_num = 7;
       continue;
     }
-    // put a dot where bit sampled
-    mResults->AddMarker(second_edge, AnalyzerResults::Dot, mSettings->mInputChannel);
+
+    bit_count++;
 
     if (diff_edge > samples_per_third) {
       // received 1
-      data |= 0x80;
+      data |= (1 << bit_num);
       ones_count += 1;
       ones_count %= 6;  // ignore 6 one bits - will recognize as 0x7e
     } else {
       // received 0
       if (ones_count == 5) {
-        ones_count = 0;
-        continue;  // ignore stuffed zero
+        ones_count = 0;  // skip stuffed zero and mark with square
+        mResults->AddMarker(second_edge, AnalyzerResults::X, mSettings->mInputChannel);
+        continue;
       }
       ones_count = 0;
     }
-    bit_num += 1;
-    if (bit_num == 8) {
+    // put a dot where bit sampled
+    mResults->AddMarker(second_edge, AnalyzerResults::Dot, mSettings->mInputChannel);
+
+    if (bit_num == 0) {
       newFrame(data, starting_sample);
+      //TODO      newFrame(bit_count, starting_sample);
       data = 0;
-      bit_num = 0;
+      bit_num = 7;
     } else {
-      data >>= 1;
+      bit_num -= 1;
     }
 	}
 }
