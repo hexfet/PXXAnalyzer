@@ -7,7 +7,8 @@ PXXAnalyzer::PXXAnalyzer()
 	mSettings( new PXXAnalyzerSettings() ),
 	mSimulationInitilized( false ),
   mPXX( NULL ),
-  mSampleRateHz( 0 )
+  mSampleRateHz( 0 ),
+  mPayloadIndex( 0 )
 {
 	SetAnalyzerSettings( mSettings.get() );
 }
@@ -24,14 +25,34 @@ void PXXAnalyzer::SetupResults()
 	mResults->AddChannelBubblesWillAppearOn( mSettings->mInputChannel );
 }
 
+U16 PXXAnalyzer::crc(U8 *data, U8 len) {
+  U16 value = 0;
+
+  for (int i=0; i < len; i++)
+    value = (value << 8) ^ CRCTable[((uint8_t)(value >> 8) ^ *data++) & 0xFF];
+  return value;
+}
+
 void PXXAnalyzer::newFrame(U64 data, U64 starting_sample) {
   Frame frame;
   frame.mData1 = data;
+  frame.mData2 = 0;
   frame.mFlags = 0;
   if (data == 0x7e) {
-    frame.mType = 1;
-    mResults->CommitPacketAndStartNewPacket();
+    mPayloadIndex = 0;
+    if (mPrevData == 0x7e) {
+      // start flag
+      frame.mType = 1;
+      mResults->CommitPacketAndStartNewPacket();
+    } else {
+      // end flag
+      frame.mData2 = crc(mPayload, 16);
+    }
+  } else {
+    mPayload[mPayloadIndex++] = (U8)data;
   }
+  mPrevData = (U8)data;
+
   frame.mStartingSampleInclusive = starting_sample;
   frame.mEndingSampleInclusive = mPXX->GetSampleNumber();
 
@@ -83,7 +104,7 @@ void PXXAnalyzer::WorkerThread()
     } else {
       // received 0
       if (ones_count == 5) {
-        ones_count = 0;  // skip stuffed zero and mark with square
+        ones_count = 0;  // skip stuffed zero
         mResults->AddMarker(second_edge, AnalyzerResults::X, mSettings->mInputChannel);
         continue;
       }

@@ -51,8 +51,12 @@ void PXXAnalyzerResults::GenerateExportFile( const char* file, DisplayBase displ
 
 		char number_str[128];
 		AnalyzerHelpers::GetNumberString( frame.mData1, display_base, 8, number_str, 128 );
-
-		file_stream << number_str << std::endl;
+    file_stream << number_str;
+    if (frame.mData2) {
+      AnalyzerHelpers::GetNumberString(frame.mData2, display_base, 16, number_str, 128);
+      file_stream << "," << number_str;
+    }
+    file_stream << std::endl;
 
 		if( UpdateExportProgressAndCheckForCancel( i, num_frames ) == true )
 		{
