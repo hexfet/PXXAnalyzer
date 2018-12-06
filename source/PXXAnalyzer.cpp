@@ -33,25 +33,27 @@ U16 PXXAnalyzer::crc(U8 *data, U8 len) {
   return value;
 }
 
-void PXXAnalyzer::newFrame(U64 data, U64 starting_sample) {
+void PXXAnalyzer::newFrame(U64 data, U64 starting_sample, bool is_flag) {
   Frame frame;
   frame.mData1 = data;
   frame.mData2 = 0;
   frame.mFlags = 0;
-  if (data == 0x7e) {
+  if (is_flag) {
     mPayloadIndex = 0;
-    if (mPrevData == 0x7e) {
+    if (mPrevFlag) {
       // start flag
       frame.mType = 1;
       mResults->CommitPacketAndStartNewPacket();
     } else {
       // end flag
+      frame.mType = 2;
       frame.mData2 = crc(mPayload, 16);
+      if (frame.mData2 != (mPayload[16] << 8 | mPayload[17])) frame.mFlags = 1;
     }
   } else {
     mPayload[mPayloadIndex++] = (U8)data;
   }
-  mPrevData = (U8)data;
+  mPrevFlag = is_flag;
 
   frame.mStartingSampleInclusive = starting_sample;
   frame.mEndingSampleInclusive = mPXX->GetSampleNumber();
@@ -74,6 +76,7 @@ void PXXAnalyzer::WorkerThread()
   U8 data = 0, bit_num = 7, ones_count = 0;
   U64 starting_sample = 1;
   U64 first_edge, second_edge = 0;
+  bool is_flag = false;
 
 	for( ; ; )
 	{
@@ -100,7 +103,10 @@ void PXXAnalyzer::WorkerThread()
       // received 1
       data |= (1 << bit_num);
       ones_count += 1;
-      ones_count %= 6;  // ignore 6 one bits - will recognize as 0x7e
+      if (ones_count == 6) { // found flag byte
+        ones_count = 0;
+        is_flag = true;
+      }
     } else {
       // received 0
       if (ones_count == 5) {
@@ -114,7 +120,8 @@ void PXXAnalyzer::WorkerThread()
     mResults->AddMarker(second_edge, AnalyzerResults::Dot, mSettings->mInputChannel);
 
     if (bit_num == 0) {
-      newFrame(data, starting_sample);
+      newFrame(data, starting_sample, is_flag);
+      is_flag = false;
       data = 0;
       bit_num = 7;
     } else {

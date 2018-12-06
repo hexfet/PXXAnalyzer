@@ -71,10 +71,10 @@ protected: //vars
 private:
   U8 mPayload[18];
   U8 mPayloadIndex;
-  U8 mPrevData;
+  bool mPrevFlag;
   U16 crc(U8 *data, U8 len);
 
-  void newFrame(U64 data, U64 starting_sample);
+  void newFrame(U64 data, U64 starting_sample, bool is_flag);
 };
 
 extern "C" ANALYZER_EXPORT const char* __cdecl GetAnalyzerName();

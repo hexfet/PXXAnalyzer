@@ -23,6 +23,11 @@ void PXXAnalyzerResults::GenerateBubbleText( U64 frame_index, Channel& channel, 
 
 	char number_str[128];
 	AnalyzerHelpers::GetNumberString( frame.mData1, display_base, 8, number_str, 128 );
+  AddResultString(number_str);
+  if (frame.mType == 1) strcat(number_str, " (START)");
+  if (frame.mType == 2) strcat(number_str, frame.mFlags ? " (CRC ERR)" : " (END)");
+  AddResultString(number_str);
+  if (frame.mData2) sprintf(&number_str[strlen(number_str)], " %04X", frame.mData2);
 	AddResultString( number_str );
 }
 
@@ -36,7 +41,9 @@ void PXXAnalyzerResults::GenerateExportFile( const char* file, DisplayBase displ
 	file_stream << "Time [s],Packet ID,Value" << std::endl;
 
 	U64 num_frames = GetNumFrames();
-	for( U32 i=0; i < num_frames; i++ )
+  U32 i=0;
+  U64 current_packet = 0;
+	while( i < num_frames )
 	{
 		Frame frame = GetFrame( i );
 		
