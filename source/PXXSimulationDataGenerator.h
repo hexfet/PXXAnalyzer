@@ -19,8 +19,8 @@ protected:
 	U32 mSimulationSampleRateHz;
 
 protected:
-	void CreatePXXByte();
-	std::string mPXXText;
+	U8 CreatePXXByte(U8 ones_count);
+  U8 mPXXData[20];
 	U32 mStringIndex;
 
 	SimulationChannelDescriptor mPXXSimulationData;
